@@ -1,7 +1,8 @@
 import numpy as np
 from numpy import linalg
 from random import random, seed
-from designMatrix import CreateDesignMatrix_X
+from sklearn.model_selection import train_test_split, KFold
+from sklearn.metrics import mean_squared_error, r2_score
 
 
 def CreateDesignMatrix_X(x, y, n=5):
@@ -25,7 +26,7 @@ def CreateDesignMatrix_X(x, y, n=5):
     return X
 
 
-def FrankeFunction(x, y):
+def FrankeFunction(x, y, eps):
     term1 = 0.75 * np.exp(-(0.25 * (9 * x - 2)**2) - 0.25 * ((9 * y - 2)**2))
     term2 = 0.75 * np.exp(-((9 * x + 1)**2) / 49.0 - 0.1 * (9 * y + 1))
     term3 = 0.5 * np.exp(-(9 * x - 7)**2 / 4.0 - 0.25 * ((9 * y - 3)**2))
@@ -40,3 +41,54 @@ def MSE(y_data, y_predict):
 
 def R2(y_data, y_predict):
     return 1 - np.sum((y_data - y_predict)**2) / np.sum((y_data - np.mean(y_data))**2)
+
+
+def KFoldCrossValidation(x, y, z, k, p):
+    """
+    K-fold cross validation of data (x,y) and z with k folds and polynomial
+    degree p. Returns the best R2 score.
+    """
+
+    # KFold instance
+    kfold = KFold(n_splits=k)
+
+    MSE = np.zeros(k)
+    R2 = np.zeros(k)
+    index_count = 0
+
+    for train_ind, test_ind in kfold.split(x):
+
+        # Assigning train and test data
+        x_train_cv = x[train_ind]
+        x_test_cv = x[test_ind]
+
+        y_train_cv = y[train_ind]
+        y_test_cv = y[test_ind]
+
+        z_train_cv = z[train_ind]
+        z_test_cv = z[test_ind]
+
+        # Raveling z data into 1D arrays
+        z_train_cv_1d = np.ravel(z_train_cv)
+        z_test_cv_1d = np.ravel(z_test_cv)
+
+        # OLS to find a model for prediction using train data
+
+        # Setting up the design matrices for training and test data
+        XY_train_cv = CreateDesignMatrix_X(x_train_cv, y_train_cv, p)
+        XY_test_cv = CreateDesignMatrix_X(x_test_cv, y_test_cv, p)
+
+        # Inverting
+        XY2_cv_inv = np.linalg.inv(XY_train_cv.T.dot(XY_train_cv))
+
+        # Model parameters beta based on training data design matrix
+        beta_cv = XY2_cv_inv.dot(XY_train_cv.T).dot(z_train_cv_1d)
+
+        # Combining test design matrix with model parameters
+        z_testModel_cv = XY_test_cv @ beta_cv
+
+        MSE[index_count] = mean_squared_error(z_test_cv_1d, z_testModel_cv)
+        R2[index_count] = r2_score(z_test_cv_1d, z_testModel_cv)
+        index_count += 1
+
+    return np.max(R2)
