@@ -30,6 +30,8 @@ z = FrankeFunction(x, y, eps)
 X = CreateDesignMatrix_X(x, y)
 
 # print(X)
+
+# print(X)
 # print(np.size(X, 0))
 # print(np.size(X, 1))
 
@@ -44,9 +46,11 @@ X = CreateDesignMatrix_X(x, y)
 
 # Inverting the matrix transpose matrix multiplication
 X2inv = np.linalg.inv(X.T.dot(X))
+# print(X2inv)
 
 # Finds model parameters
 beta = X2inv.dot(X.T).dot(np.ravel(z))
+# print(beta)
 
 # Setting up the model for comparing with real data
 zpredict = X.dot(beta)
@@ -72,15 +76,20 @@ fig.colorbar(surf, shrink=0.5, aspect=5)
 Part b)
 """
 
-x_train, x_test, y_train, y_test, z_train, z_test = train_test_split(x, y, z)
+x_train, x_test, y_train, y_test, z_train, z_test = train_test_split(
+    x, y, z, test_size=0.2)
+
+k = 5
+P = 20
+
+beta = np.zeros((P, int((P + 1) * (P + 2) / 2)))
 
 
-beta = np.zeros(20)
+for p in range(P):
+    beta_test = KFoldCrossValidation(x, y, z, k, p)
+    print(len(beta_test))
 
-for p in range(20):
-    beta[p] = KFoldCrossValidation(x, y, z, 20, p)
 
-    # print(MSE_cv)
-    # print(R2_cv)
-
-print(beta)
+"""
+Part c)
+"""

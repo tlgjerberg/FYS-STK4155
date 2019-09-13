@@ -7,8 +7,10 @@ from sklearn.metrics import mean_squared_error, r2_score
 
 def CreateDesignMatrix_X(x, y, n=5):
     """
-    Function for creating a design X-matrix with rows [1, x, y, x^2, xy, xy^2 , etc.]
-    Input is x and y mesh or raveled mesh, keyword agruments n is the degree of the polynomial you want to fit.
+    Function for creating a design X-matrix with
+    rows [1, x, y, x^2, xy, xy^2 , etc.]
+    Input is x and y mesh or raveled mesh,
+    keyword agruments n is the degree of the polynomial you want to fit.
     """
     if len(x.shape) > 1:
         x = np.ravel(x)
@@ -49,12 +51,15 @@ def KFoldCrossValidation(x, y, z, k, p):
     degree p. Returns the best R2 score.
     """
 
+    # print(x)
+
     # KFold instance
     kfold = KFold(n_splits=k)
 
     MSE = np.zeros(k)
     R2 = np.zeros(k)
-    index_count = 0
+    beta = np.zeros((k, int((p + 1) * (p + 2) / 2)))
+    index = 0
 
     for train_ind, test_ind in kfold.split(x):
 
@@ -75,8 +80,8 @@ def KFoldCrossValidation(x, y, z, k, p):
         # OLS to find a model for prediction using train data
 
         # Setting up the design matrices for training and test data
-        XY_train_cv = CreateDesignMatrix_X(x_train_cv, y_train_cv, p)
-        XY_test_cv = CreateDesignMatrix_X(x_test_cv, y_test_cv, p)
+        XY_train_cv = CreateDesignMatrix_X(x_train_cv, y_train_cv, n=p)
+        XY_test_cv = CreateDesignMatrix_X(x_test_cv, y_test_cv, n=p)
 
         # Inverting
         XY2_cv_inv = np.linalg.inv(XY_train_cv.T.dot(XY_train_cv))
@@ -87,8 +92,11 @@ def KFoldCrossValidation(x, y, z, k, p):
         # Combining test design matrix with model parameters
         z_testModel_cv = XY_test_cv @ beta_cv
 
-        MSE[index_count] = mean_squared_error(z_test_cv_1d, z_testModel_cv)
-        R2[index_count] = r2_score(z_test_cv_1d, z_testModel_cv)
-        index_count += 1
+        MSE[index] = mean_squared_error(z_test_cv_1d, z_testModel_cv)
+        R2[index] = r2_score(z_test_cv_1d, z_testModel_cv)
+        beta[index, :] = beta_cv
+        index += 1
 
-    return np.max(R2)
+        # print(np.argmax(R2))
+
+    return beta[np.argmax(R2)]
