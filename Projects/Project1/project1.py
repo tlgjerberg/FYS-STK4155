@@ -13,7 +13,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 Part a)
 """
 
-np.random.seed(1)
+np.random.seed(111)
 
 fig = plt.figure()
 ax = fig.gca(projection='3d')
@@ -46,7 +46,7 @@ X = CreateDesignMatrix_X(x, y)
 
 # Inverting the matrix transpose matrix multiplication
 X2inv = np.linalg.inv(X.T.dot(X))
-# print(X2inv)
+print(np.size(X2inv))
 
 # Finds model parameters
 beta = X2inv.dot(X.T).dot(np.ravel(z))
@@ -82,13 +82,22 @@ x_train, x_test, y_train, y_test, z_train, z_test = train_test_split(
 k = 5
 P = 20
 
-beta = np.zeros((P, int((P + 1) * (P + 2) / 2)))
-
+# beta = np.zeros((P, int((P + 1) * (P + 2) / 2)))
+MSE_cv = np.zeros(P)
+R2_cv = np.zeros(P)
 
 for p in range(P):
-    beta_test = KFoldCrossValidation(x, y, z, k, p)
-    print(len(beta_test))
+    MSE_cv[p], R2_cv[p] = KFoldCrossValidation(x_train, y_train, z_train, k, p)
 
+# print(MSE_cv)
+# print(R2_cv)
+
+P_plt = np.linspace(0, P, P)
+plt.figure()
+plt.plot(P_plt, MSE_cv)
+plt.plot(P_plt, R2_cv)
+plt.legend(['MSE', 'R2'])
+plt.show()
 
 """
 Part c)

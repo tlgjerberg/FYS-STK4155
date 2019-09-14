@@ -45,6 +45,18 @@ def R2(y_data, y_predict):
     return 1 - np.sum((y_data - y_predict)**2) / np.sum((y_data - np.mean(y_data))**2)
 
 
+def MatrixInvSVD(X):
+
+    u, s, v = np.linalg.svd(X)
+
+    uT = u.transpose()
+    vT = v.transpose()
+
+    XInv = np.dot(v.transpose(), np.dot(np.diag(s**-1), u.transpose()))
+
+    return XInv
+
+
 def KFoldCrossValidation(x, y, z, k, p):
     """
     K-fold cross validation of data (x,y) and z with k folds and polynomial
@@ -59,7 +71,9 @@ def KFoldCrossValidation(x, y, z, k, p):
     MSE = np.zeros(k)
     R2 = np.zeros(k)
     beta = np.zeros((k, int((p + 1) * (p + 2) / 2)))
+    tot_R2_estimate = tot_MSE_estimate = 0
     index = 0
+    jndex = 0
 
     for train_ind, test_ind in kfold.split(x):
 
@@ -84,19 +98,33 @@ def KFoldCrossValidation(x, y, z, k, p):
         XY_test_cv = CreateDesignMatrix_X(x_test_cv, y_test_cv, n=p)
 
         # Inverting
-        XY2_cv_inv = np.linalg.inv(XY_train_cv.T.dot(XY_train_cv))
+        # XY2_cv_inv = np.linalg.inv(XY_train_cv.T.dot(XY_train_cv))
+
+        XY2_cv_inv = MatrixInvSVD(XY_train_cv)
 
         # Model parameters beta based on training data design matrix
         beta_cv = XY2_cv_inv.dot(XY_train_cv.T).dot(z_train_cv_1d)
 
         # Combining test design matrix with model parameters
-        z_testModel_cv = XY_test_cv @ beta_cv
+        z_testPred_cv = XY_test_cv @ beta_cv
 
-        MSE[index] = mean_squared_error(z_test_cv_1d, z_testModel_cv)
-        R2[index] = r2_score(z_test_cv_1d, z_testModel_cv)
-        beta[index, :] = beta_cv
+        MSE[index] = mean_squared_error(z_test_cv_1d, z_testPred_cv)
+        R2[index] = r2_score(z_test_cv_1d, z_testPred_cv)
+        # beta[index, :] = beta_cv
+        # print(R2[index])
+
+        tot_MSE_estimate += MSE[index]
+        tot_R2_estimate += R2[index]
+        # print(tot_MSE_estimate)
+
         index += 1
 
-        # print(np.argmax(R2))
+    # print(MSE)
+    # print(tot_MSE_estimate)
+    tot_MSE_estimate /= k
+    tot_R2_estimate /= k
+    # print(tot_MSE_estimate)
+    # print(tot_R2_estimate)
+    # print(np.argmax(R2))
 
-    return beta[np.argmax(R2)]
+    return tot_MSE_estimate, tot_R2_estimate
