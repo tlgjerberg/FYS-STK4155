@@ -52,7 +52,7 @@ def MatrixInvSVD(X):
     uT = u.transpose()
     vT = v.transpose()
 
-    XInv = np.dot(v.transpose(), np.dot(np.diag(s**-1), u.transpose()))
+    XInv = np.dot(vT, np.dot(np.diag(s**-1), uT))
 
     return XInv
 
@@ -99,11 +99,12 @@ def KFoldCrossValidation(x, y, z, k, p):
 
         # Inverting
         # XY2_cv_inv = np.linalg.inv(XY_train_cv.T.dot(XY_train_cv))
+        XY2_cv_inv_SVD = MatrixInvSVD(XY_train_cv.T.dot(XY_train_cv))
 
-        XY2_cv_inv = MatrixInvSVD(XY_train_cv)
+        # XY2_cv_inv = MatrixInvSVD(XY_train_cv)
 
         # Model parameters beta based on training data design matrix
-        beta_cv = XY2_cv_inv.dot(XY_train_cv.T).dot(z_train_cv_1d)
+        beta_cv = XY2_cv_inv_SVD.dot(XY_train_cv.T).dot(z_train_cv_1d)
 
         # Combining test design matrix with model parameters
         z_testPred_cv = XY_test_cv @ beta_cv
