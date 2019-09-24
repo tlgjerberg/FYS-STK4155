@@ -57,13 +57,41 @@ def MatrixInvSVD(X):
     return XInv
 
 
-def KFoldCrossValidation(x, y, z, k, p):
+def OLS(X, z):
+
+    XT = X.T
+    X2 = XT.dot(X)
+    X2inv = MatrixInvSVD((X2))
+    beta = X2inv.dot(XT).dot(z)
+
+    return beta
+
+
+def Ridge(X, z, lmd):
+
+    XT = X.T
+
+    X2 = XT.dot(X)
+    I = np.eye(np.size(X2, 0))
+    # X2inv = MatrixInvSVD((X2 - lmd * I))
+    X2inv = linalg.pinv((X2 - lmd * I))
+    beta = X2inv.dot(XT).dot(z)
+    return beta
+
+
+# def Lasso(X, z, lmd):
+#
+#     clf_lasso = skl.Lasso(alpha=lmb).fit(X, z)
+#     z_lasso = clf_lasso.predict(X)
+#
+#     return beta
+
+
+def KFoldCrossValidation(x, y, z, k, p, lmd, method='OLS'):
     """
     K-fold cross validation of data (x,y) and z with k folds and polynomial
     degree p. Returns the best R2 score.
     """
-
-    # print(x)
 
     # KFold instance
     kfold = KFold(n_splits=k, shuffle=True)
@@ -73,11 +101,12 @@ def KFoldCrossValidation(x, y, z, k, p):
     R2_test = np.zeros(k)
     R2_train = np.zeros(k)
     beta = np.zeros((k, int((p + 1) * (p + 2) / 2)))
-    tot_R2_estimate_test = tot_MSE_estimate_test = 0
-    tot_R2_estimate_train = tot_MSE_estimate_train = 0
-    index = 0
-    jndex = 0
+    tot_R2_test = tot_MSE_test = 0
+    tot_R2_train = tot_MSE_train = 0
+    z_pred = []
+    z_test_lst = []
 
+    index = 0
     for train_ind, test_ind in kfold.split(x):
 
         # Assigning train and test data
@@ -94,48 +123,47 @@ def KFoldCrossValidation(x, y, z, k, p):
         z_train_1d = np.ravel(z_train)
         z_test_1d = np.ravel(z_test)
 
-        # OLS to find a model for prediction using train data
+        # Subtracting the mean from the training and test data to avoid
+        # penalty to intercept
+        x_train_mean = np.mean(x_train)
+        y_train_mean = np.mean(y_train)
+        z_train_mean = np.mean(z_train)
 
         # Setting up the design matrices for training and test data
-        XY_train = CreateDesignMatrix_X(x_train, y_train, n=p)
-        XY_test = CreateDesignMatrix_X(x_test, y_test, n=p)
+        X_train = CreateDesignMatrix_X(x_train, y_train, n=p)
+        X_test = CreateDesignMatrix_X(x_test, y_test, n=p)
 
-        # Inverting
-        # XY2_inv = np.linalg.inv(XY_train.T.dot(XY_train))
-        XY2_inv_SVD = MatrixInvSVD(XY_train.T.dot(XY_train))
+        beta = Ridge(X_train, z_train_1d, lmd)
 
-        # XY2_inv = MatrixInvSVD(XY_train)
+        # Computing modelfrom design matrix and model parameters
+        z_testPred = X_test @ beta
+        z_trainPred = X_train @ beta
 
-        # Model parameters beta based on training data design matrix
-        beta = XY2_inv_SVD.dot(XY_train.T).dot(z_train_1d)
-
-        # Combining test design matrix with model parameters
-        z_testPred = XY_test @ beta
-        z_trainPred = XY_train @ beta
-
+        # Finding MSE and R2 scores with both training and test data
         MSE_test[index] = mean_squared_error(z_test_1d, z_testPred)
         R2_test[index] = r2_score(z_test_1d, z_testPred)
         MSE_train[index] = mean_squared_error(z_train_1d, z_trainPred)
         R2_train[index] = r2_score(z_train_1d, z_trainPred)
-        # beta[index, :] = beta
-        # print(R2[index])
 
-        tot_MSE_estimate_test += MSE_test[index]
-        tot_R2_estimate_test += R2_test[index]
-        tot_MSE_estimate_train += MSE_train[index]
-        tot_R2_estimate_train += R2_train[index]
+        z_pred.append(z_testPred)
+        z_test_lst.append(z_test_1d)
+
+        tot_MSE_test += MSE_test[index]
+        tot_R2_test += R2_test[index]
+        tot_MSE_train += MSE_train[index]
+        tot_R2_train += R2_train[index]
+
         # print(tot_MSE_estimate)
 
         index += 1
 
     # print(MSE)
     # print(tot_MSE_estimate)
-    tot_MSE_estimate_test /= k
-    tot_R2_estimate_test /= k
-    tot_MSE_estimate_train /= k
-    tot_MSE_estimate_train /= k
-    # print(tot_MSE_estimate)
-    # print(tot_R2_estimate)
-    # print(np.argmax(R2))
+    bias_test = np.mean((z_test - np.mean(z_pred))**2)
+    var_test = np.mean(np.var(z_pred))
+    tot_MSE_test /= k
+    tot_R2_test /= k
+    tot_MSE_train /= k
+    tot_MSE_train /= k
 
-    return tot_MSE_estimate_test, tot_MSE_estimate_train
+    return tot_MSE_test, tot_MSE_train, var_test, np.sqrt(bias_test)
