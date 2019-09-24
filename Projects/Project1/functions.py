@@ -3,6 +3,10 @@ from numpy import linalg
 from random import random, seed
 from sklearn.model_selection import train_test_split, KFold
 from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator, FormatStrFormatter
 
 
 def CreateDesignMatrix_X(x, y, n=5):
@@ -45,16 +49,16 @@ def R2(y_data, y_predict):
     return 1 - np.sum((y_data - y_predict)**2) / np.sum((y_data - np.mean(y_data))**2)
 
 
-def MatrixInvSVD(X):
-
-    u, s, v = np.linalg.svd(X)
-
-    uT = u.transpose()
-    vT = v.transpose()
-
-    XInv = np.dot(vT, np.dot(np.diag(s**-1), uT))
-
-    return XInv
+# def MatrixInvSVD(X):
+#
+#     u, s, v = np.linalg.svd(X)
+#
+#     uT = u.transpose()
+#     vT = v.transpose()
+#
+#     XInv = np.dot(vT, np.dot(np.diag(s**-1), uT))
+#
+#     return XInv
 
 
 def OLS(X, z):
@@ -74,39 +78,24 @@ def Ridge(X, z, lmd):
     X2 = XT.dot(X)
     I = np.eye(np.size(X2, 0))
     # X2inv = MatrixInvSVD((X2 - lmd * I))
-    X2inv = linalg.pinv((X2 - lmd * I))
+    X2inv = linalg.pinv((X2 + (lmd * I)))
     beta = X2inv.dot(XT).dot(z)
     return beta
 
 
-# def Lasso(X, z, lmd):
-#
-#     clf_lasso = skl.Lasso(alpha=lmb).fit(X, z)
-#     z_lasso = clf_lasso.predict(X)
-#
-#     return beta
-
-
-def KFoldCrossValidation(x, y, z, k, p, lmd, method='OLS'):
+def KFoldCrossValidation(x, y, z, k, p, lmd):
     """
     K-fold cross validation of data (x,y) and z with k folds and polynomial
-    degree p. Returns the best R2 score.
+    degree p.
     """
 
     # KFold instance
     kfold = KFold(n_splits=k, shuffle=True)
 
-    MSE_test = np.zeros(k)
-    MSE_train = np.zeros(k)
-    R2_test = np.zeros(k)
-    R2_train = np.zeros(k)
     beta = np.zeros((k, int((p + 1) * (p + 2) / 2)))
-    tot_R2_test = tot_MSE_test = 0
-    tot_R2_train = tot_MSE_train = 0
-    z_pred = []
-    z_test_lst = []
+    R2_test = MSE_test = 0
+    R2_train = MSE_train = 0
 
-    index = 0
     for train_ind, test_ind in kfold.split(x):
 
         # Assigning train and test data
@@ -123,12 +112,6 @@ def KFoldCrossValidation(x, y, z, k, p, lmd, method='OLS'):
         z_train_1d = np.ravel(z_train)
         z_test_1d = np.ravel(z_test)
 
-        # Subtracting the mean from the training and test data to avoid
-        # penalty to intercept
-        x_train_mean = np.mean(x_train)
-        y_train_mean = np.mean(y_train)
-        z_train_mean = np.mean(z_train)
-
         # Setting up the design matrices for training and test data
         X_train = CreateDesignMatrix_X(x_train, y_train, n=p)
         X_test = CreateDesignMatrix_X(x_test, y_test, n=p)
@@ -140,30 +123,55 @@ def KFoldCrossValidation(x, y, z, k, p, lmd, method='OLS'):
         z_trainPred = X_train @ beta
 
         # Finding MSE and R2 scores with both training and test data
-        MSE_test[index] = mean_squared_error(z_test_1d, z_testPred)
-        R2_test[index] = r2_score(z_test_1d, z_testPred)
-        MSE_train[index] = mean_squared_error(z_train_1d, z_trainPred)
-        R2_train[index] = r2_score(z_train_1d, z_trainPred)
+        MSE_test += mean_squared_error(z_test_1d, z_testPred)
+        R2_test += r2_score(z_test_1d, z_testPred)
+        MSE_train += mean_squared_error(z_train_1d, z_trainPred)
+        R2_train += r2_score(z_train_1d, z_trainPred)
+        bias_test = np.mean((z_test_1d - np.mean(z_testPred))**2)
+        var_test = np.mean(np.var(z_testPred))
 
-        z_pred.append(z_testPred)
-        z_test_lst.append(z_test_1d)
+    bias_test /= k
+    var_test /= k
 
-        tot_MSE_test += MSE_test[index]
-        tot_R2_test += R2_test[index]
-        tot_MSE_train += MSE_train[index]
-        tot_R2_train += R2_train[index]
+    MSE_test /= k
+    R2_test /= k
+    MSE_train /= k
+    MSE_train /= k
 
-        # print(tot_MSE_estimate)
+    return MSE_test, MSE_train, var_test, bias_test
 
-        index += 1
 
-    # print(MSE)
-    # print(tot_MSE_estimate)
-    bias_test = np.mean((z_test - np.mean(z_pred))**2)
-    var_test = np.mean(np.var(z_pred))
-    tot_MSE_test /= k
-    tot_R2_test /= k
-    tot_MSE_train /= k
-    tot_MSE_train /= k
+def plot3D(x, y, z):
 
-    return tot_MSE_test, tot_MSE_train, var_test, np.sqrt(bias_test)
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+
+    # Plot the surface.
+    surf = ax.plot_surface(x, y, z, cmap=cm.coolwarm,
+                           linewidth=0, antialiased=False)
+    # Customize the z axis.
+    ax.set_zlim(-0.10, 1.40)
+    ax.zaxis.set_major_locator(LinearLocator(10))
+    ax.zaxis.set_major_formatter(FormatStrFormatter('% .02f'))
+    # Add a color bar which maps values to colors.
+    fig.colorbar(surf, shrink=0.5, aspect=5)
+
+    # def DataImport(filename):
+    #     """
+    #     Imports terraindata...
+    #     """
+    #
+    #     # Load the terrain
+    #     terrain1 = imread(filename)
+    #     # Show the terrain
+    #
+    #     downscaled = np.zeros(
+    #         (int(len(terrain1[:, 0]) / 10), int(len(terrain1[0, :]) / 10)))
+    #     downscaled = terrain1[0::10, 0::10]
+    #
+    #     plt.figure()
+    #     plt.imshow(terrain1, cmap='gray')
+    #     plt.figure()
+    #
+    #
+    #     plt.imshow(downscaled, cmap='gray')
