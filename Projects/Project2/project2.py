@@ -49,15 +49,15 @@ XTrain, XTest, yTrain, yTest = train_test_split(
 
 # Input Scaling
 sc = StandardScaler()
-XTrain = sc.transform(XTrain)
+XTrain = sc.fit_transform(XTrain)
 XTest = sc.transform(XTest)
 
 # One-hot's of the target vector
-Y_train_onehot = onehotencoder.transform(yTrain)
-Y_test_onehot = onehotencoder.transform(yTest)
+Y_train_onehot = onehotencoder.fit_transform(yTrain)
+Y_test_onehot = onehotencoder.fit_transform(yTest)
 
 # Remove instances with zeros only for past bill statements or paid amounts
-'''
+
 df = df.drop(df[(df.BILL_AMT1 == 0) &
                 (df.BILL_AMT2 == 0) &
                 (df.BILL_AMT3 == 0) &
@@ -70,18 +70,20 @@ df = df.drop(df[(df.BILL_AMT1 == 0) &
                 (df.PAY_AMT4 == 0) &
                 (df.PAY_AMT5 == 0) &
                 (df.PAY_AMT6 == 0)].index)
-'''
 
-df = df.drop(df[(df.BILL_AMT1 == 0) &
-                (df.BILL_AMT2 == 0) &
-                (df.BILL_AMT3 == 0) &
-                (df.BILL_AMT4 == 0) &
-                (df.BILL_AMT5 == 0) &
-                (df.BILL_AMT6 == 0)].index)
 
-df = df.drop(df[(df.PAY_AMT1 == 0) &
-                (df.PAY_AMT2 == 0) &
-                (df.PAY_AMT3 == 0) &
-                (df.PAY_AMT4 == 0) &
-                (df.PAY_AMT5 == 0) &
-                (df.PAY_AMT6 == 0)].index)
+# df = df.drop(df[(df.BILL_AMT1 == 0) &
+#                 (df.BILL_AMT2 == 0) &
+#                 (df.BILL_AMT3 == 0) &
+#                 (df.BILL_AMT4 == 0) &
+#                 (df.BILL_AMT5 == 0) &
+#                 (df.BILL_AMT6 == 0)].index)
+#
+# df = df.drop(df[(df.PAY_AMT1 == 0) &
+#                 (df.PAY_AMT2 == 0) &
+#                 (df.PAY_AMT3 == 0) &
+#                 (df.PAY_AMT4 == 0) &
+#                 (df.PAY_AMT5 == 0) &
+#                 (df.PAY_AMT6 == 0)].index)
+
+print(df)

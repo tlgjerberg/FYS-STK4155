@@ -1,4 +1,11 @@
 import numpy as np
+from sklearn import datasets
+
+
+def generate_data():
+    np.random.seed(0)
+    X, y = datasets.make_moons(20, noise=0.20)
+    return X, y
 
 
 def softmax(x):
@@ -6,11 +13,26 @@ def softmax(x):
     return exps / np.sum(exps)
 
 
+def sigmoid(X):
+    return 1 / (1 + np.exp(-X))
+
+
+def WMatrix(p):
+
+    w = p * (1 - p)
+    W = np.diag(w)
+
+    return W
+
+
 def delta_cross_entropy(X, y, p):
 
     C = X.T.dot(y - p)
 
     return C
+
+
+def cross_entropy():
 
 
 def StocGradDescent(X, y, M, n_epochs):
@@ -33,9 +55,21 @@ def StocGradDescent(X, y, M, n_epochs):
         j += 1
 
 
-def main():
-    X, y = data
+def LogisticRegression(X, y):
     p = softmax(X)
+    eps = 1e-14
+    while np.abs(beta_new - beta) > eps:
+        beta_new = beta - delta_cross_entropy(X, y, p)
+
+
+def main():
+    X, y = generate_data()
+    # print(X)
+    # print(y)
+    p = sigmoid(X)
+    # print(p)
+    W = WMatrix(p)
+    print(W)
 
 
 if __name__ == "__main__":
