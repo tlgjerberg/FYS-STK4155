@@ -3,10 +3,12 @@ from numpy import linalg
 from random import random, seed
 from sklearn.model_selection import train_test_split, KFold
 from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.linear_model import Lasso
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
+from skimage.io import imread, imshow
 
 
 def CreateDesignMatrix_X(x, y, n=5):
@@ -61,32 +63,35 @@ def R2(y_data, y_predict):
 #     return XInv
 
 
-def OLS(X, z):
+def OLS_coeff(X, z):
 
     XT = X.T
     X2 = XT.dot(X)
-    X2inv = MatrixInvSVD((X2))
+    X2inv = linalg.pinv(X2)
     beta = X2inv.dot(XT).dot(z)
 
     return beta
 
 
-def Ridge(X, z, lmd):
+def Ridge_coeff(X, z, lmd):
+
+    if lmd != 0:
+        X = X - np.mean(X)
 
     XT = X.T
-
     X2 = XT.dot(X)
     I = np.eye(np.size(X2, 0))
-    # X2inv = MatrixInvSVD((X2 - lmd * I))
     X2inv = linalg.pinv((X2 + (lmd * I)))
     beta = X2inv.dot(XT).dot(z)
+    # print(beta)
+
     return beta
 
 
-def KFoldCrossValidation(x, y, z, k, p, lmd):
+def KFoldCrossValidation(x, y, z, k, p, Poly_max, lmd, method='Ridge'):
     """
     K-fold cross validation of data (x,y) and z with k folds and polynomial
-    degree p.
+    degree p
     """
 
     # KFold instance
@@ -95,6 +100,7 @@ def KFoldCrossValidation(x, y, z, k, p, lmd):
     beta = np.zeros((k, int((p + 1) * (p + 2) / 2)))
     R2_test = MSE_test = 0
     R2_train = MSE_train = 0
+    bias_test = var_test = 0
 
     for train_ind, test_ind in kfold.split(x):
 
@@ -116,32 +122,49 @@ def KFoldCrossValidation(x, y, z, k, p, lmd):
         X_train = CreateDesignMatrix_X(x_train, y_train, n=p)
         X_test = CreateDesignMatrix_X(x_test, y_test, n=p)
 
-        beta = Ridge(X_train, z_train_1d, lmd)
+        if method == 'Lasso':
 
-        # Computing modelfrom design matrix and model parameters
-        z_testPred = X_test @ beta
-        z_trainPred = X_train @ beta
+            # Lasso regression
+            clf_lasso = Lasso(alpha=lmd).fit(X_train, z_train_1d)
+            z_testPred = clf_lasso.predict(X_test)
+            z_trainPred = clf_lasso.predict(X_train)
+
+        else:
+
+            beta = Ridge_coeff(X_train, z_train_1d, lmd)
+
+            # Computing modelfrom design matrix and model parameters
+            z_testPred = X_test @ beta
+            z_trainPred = X_train @ beta
+
+            # padding_size = (Poly_max - p)
+            # print(padding_size)
+
+            # print(beta)
+            # beta_padded = np.pad(beta, padding_size)
+            # print(beta_padded)
 
         # Finding MSE and R2 scores with both training and test data
         MSE_test += mean_squared_error(z_test_1d, z_testPred)
         R2_test += r2_score(z_test_1d, z_testPred)
         MSE_train += mean_squared_error(z_train_1d, z_trainPred)
         R2_train += r2_score(z_train_1d, z_trainPred)
-        bias_test = np.mean((z_test_1d - np.mean(z_testPred))**2)
-        var_test = np.mean(np.var(z_testPred))
+        bias_test += np.mean((z_test_1d - np.mean(z_testPred))**2)
+        var_test += np.var(z_testPred)
 
+    # Dividing the sum of MSE, bias and variance to find mean of all
     bias_test /= k
     var_test /= k
 
     MSE_test /= k
     R2_test /= k
     MSE_train /= k
-    MSE_train /= k
+    R2_train /= k
 
     return MSE_test, MSE_train, var_test, bias_test
 
 
-def plot3D(x, y, z):
+def plot3D(x, y, z, z_predict):
 
     fig = plt.figure()
     ax = fig.gca(projection='3d')
@@ -149,6 +172,10 @@ def plot3D(x, y, z):
     # Plot the surface.
     surf = ax.plot_surface(x, y, z, cmap=cm.coolwarm,
                            linewidth=0, antialiased=False)
+
+    surf_pred = ax.plot_surface(x, y, z_predict, cmap=cm.coolwarm,
+                                linewidth=0, antialiased=False)
+
     # Customize the z axis.
     ax.set_zlim(-0.10, 1.40)
     ax.zaxis.set_major_locator(LinearLocator(10))
@@ -156,22 +183,35 @@ def plot3D(x, y, z):
     # Add a color bar which maps values to colors.
     fig.colorbar(surf, shrink=0.5, aspect=5)
 
-    # def DataImport(filename):
-    #     """
-    #     Imports terraindata...
-    #     """
-    #
-    #     # Load the terrain
-    #     terrain1 = imread(filename)
-    #     # Show the terrain
-    #
-    #     downscaled = np.zeros(
-    #         (int(len(terrain1[:, 0]) / 10), int(len(terrain1[0, :]) / 10)))
-    #     downscaled = terrain1[0::10, 0::10]
-    #
-    #     plt.figure()
-    #     plt.imshow(terrain1, cmap='gray')
-    #     plt.figure()
-    #
-    #
-    #     plt.imshow(downscaled, cmap='gray')
+
+def DataImport(filename):
+    """
+    Imports terraindata...
+    """
+
+    # Load the terrain
+    terrain1 = imread(filename)
+    # Show the terrain
+
+    downscaled = np.zeros(
+        (int(len(terrain1[:, 0]) / 20), int(len(terrain1[0, :]) / 20)))
+    downscaled = terrain1[0::20, 0::20]
+
+    plt.figure()
+    plt.imshow(terrain1, cmap='gray')
+    plt.figure()
+
+    plt.imshow(downscaled, cmap='gray')
+
+    return terrain1, downscaled
+
+
+def OLSPredict(x, y, z, poly):
+
+    X = CreateDesignMatrix_X(x, y)
+
+    beta = OLS_coeff(X, z)
+
+    z_predict = X @ beta
+
+    return z_predict
