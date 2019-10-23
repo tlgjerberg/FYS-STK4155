@@ -28,6 +28,10 @@ class LogisticRegression:
         pass
 
     def create_mini_batches(self, X, y, batch_size):
+        mini_batches = []
+        data = np.hstack((X, y))
+        np.random.shuffle(data)
+        n_mini
 
     def fit(self, X, y):
 
