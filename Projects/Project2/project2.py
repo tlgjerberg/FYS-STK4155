@@ -3,6 +3,7 @@ import os
 import numpy as np
 import random
 import seaborn as sns
+from NeuralNet import *
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
@@ -73,3 +74,10 @@ XTest = sc.transform(XTest)
 # One-hot's of the target vector
 Y_train_onehot = onehotencoder.fit_transform(yTrain)
 Y_test_onehot = onehotencoder.transform(yTest)
+
+
+NN = NeuralNetwork([2, 10, 5])
+
+NN.SGD(XTrain, Y_train_onehot, 10, 4)
+
+NN.evaluate(XTest, Y_test_onehot)
