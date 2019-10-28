@@ -31,9 +31,9 @@ class LogisticRegression:
         mini_batches = []
         data = np.hstack((X, y))
         np.random.shuffle(data)
-        n_mini
+        return
 
-    def fit(self, X, y):
+    def GD(self, X, y):
 
         if self.fit_intercept:
             X = self._add_intercept(X)
@@ -52,7 +52,7 @@ class LogisticRegression:
                 h = self.__sigmoid(z)
                 print(f'loss: {self.__loss(h, y)} \t')
 
-    def fitSGD(self, X, y, batch_size=1):
+    def SGD(self, X, y, batch_size=1):
 
         if self.fit_intercept:
             X = self._add_intercept(X)
@@ -68,3 +68,5 @@ class LogisticRegression:
                 z = np.dot(X, self.theta)
                 h = self.__sigmoid(z)
                 print(f'loss: {self.__loss(h, y)} \t')
+
+        return
