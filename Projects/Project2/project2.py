@@ -73,3 +73,5 @@ XTest = sc.transform(XTest)
 # One-hot's of the target vector
 Y_train_onehot = onehotencoder.fit_transform(yTrain)
 Y_test_onehot = onehotencoder.transform(yTest)
+
+NN = NeuralNetwork([])
