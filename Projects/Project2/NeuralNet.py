@@ -46,6 +46,7 @@ class NeuralNetwork:
     def feedforwardOut(self, a):
         for b, w in zip(self.biases, self.weights):
             a = sigmoid(np.dot(w, a) + b)
+
         return a
 
     def SGD(self, X, y, epochs, mini_batch_size):
