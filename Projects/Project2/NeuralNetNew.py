@@ -4,6 +4,7 @@ import numpy as np
 class NeuralNetwork:
     def __init__(self, sizes):
         self.sizes = sizes
+        self.num_layers = len(sizes)
         self.biases = [np.random.randn(y, 1) for y in sizes[1:]]
         self.weights = [np.random.randn(y, x)
                         for x, y in zip(sizes[:-1], sizes[1:])]
@@ -17,7 +18,7 @@ class NeuralNetwork:
 
     def FeedForward(self):
 
-        self.activations = []
+        self.act = []
         self.zList = []
         self.targets = []
 
@@ -25,7 +26,7 @@ class NeuralNetwork:
             z = np.matmul(self.X @ self.weights) + self.biases
             a = _sigmoid(z)
             self.zList.append(z)
-            self.activations.append(a)
+            self.act.append(a)
             selt.targets.append(_softmax(z))
         # Find error delta
           # Target t
@@ -36,16 +37,19 @@ class NeuralNetwork:
         FeedForward()
 
         # Output layer
-        delta_out = (self.activation[-1] - self) * \
-            self.activation[-1] * (1 - self.activation[-1])
+        delta_out = (self.act[-1] - self.y) * \
+            self.act[-1] * (1 - self.act[-1])
 
-        nabla_b_out = np.sum(delta_out, axis=0)
-        nabla_w_out = np.matmul(self.a.T, delta_out)
+        grad_b_out = np.sum(delta_out, axis=0)
+        grad_w_out = np.matmul(self.act[-l].T, delta_out)
 
-        delta_hidden = np.matmul(self.a.T, delta_out) * self.a * (1 - self.a)
+        for l in range(2, self.num_layers):
+            z = zList[-l]
+            delta_hidden = np.matmul(self.weights[-l + 1].T, delta_out)
+            * self.act[-l] * (1 - self.act[-l])
 
-        nabla_b_hidden = np.sum(delta_hidden, axis=0)
-        nabla_w_hidden = np.matmul(self.X.T, delta_hidden)
+            grad_b_hidden = np.sum(delta_hidden, axis=0)
+            grad_w_hidden = np.matmul(delta_hidden, self.act[-l - 1].T)
 
     def SDG(self, X, y, eta=0.01, epochs=10):
         self.X = X
