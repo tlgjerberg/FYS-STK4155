@@ -48,8 +48,12 @@ class NeuralNetwork:
             self.zList.append(z)
             self.act.append(activation)
 
-    def FeedForwardOut(self):
-        pass
+    def FeedForwardOut(self, X):
+        activation = X
+
+        for b, w in zip(self.biases, self.weights):
+            z = np.matmul(activation, w) + b
+            activation = self._sigmoid(z)
 
     def BackPropagation(self):
 
@@ -78,9 +82,7 @@ class NeuralNetwork:
 
         return random_indcs
 
-    def MBSDG(self, X, y, n_iters=100, eta=1e-4, epochs=10, batch_size=10):
-        self.X_full = X
-        self.y_full = y
+    def MBSDG(self, n_iters=100, eta=1e-4, epochs=10, batch_size=10):
         # print("full x", self.X_full.shape)
 
         data_indices = np.arange(len(self.y_full))
@@ -94,3 +96,6 @@ class NeuralNetwork:
                 self.y = self.y_full[random_indcs]
 
                 self.BackPropagation()
+
+    def predict(self, X):
+        Y_pred = self.FeedForwardOut(X)
