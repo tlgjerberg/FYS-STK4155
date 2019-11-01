@@ -2,11 +2,11 @@ import numpy as np
 
 
 class NeuralNetwork:
-    def __init__(self, layer_sizes, num_param, num_inputs, seed=0):
+    def __init__(self, layer_sizes, X, y, seed=0):
         self.layer_sizes = layer_sizes
-        self.num_layers = len(layer_sizes)
-        self.num_param = num_param
-        self.num_inputs = num_inputs
+        self.num_layers = len(layer_sizes) - 1
+        self.X = X
+        self.y = y
         self.act = np.empty(self.num_layers + 2, dtype=np.ndarray)
         self.weights = np.empty(self.num_layers + 1, dtype=np.ndarray)
         self.biases = np.empty(self.num_layers + 1, dtype=np.ndarray)
@@ -15,10 +15,10 @@ class NeuralNetwork:
         self._architecture()
 
     def _architecture(self):
-        self.weights[0] = np.random.randn(self.num_param, self.layer_sizes[0])
-        self.biases[0] = np.random.randn(1, self.num_inputs)
+        self.weights[0] = np.random.randn(self.X.shape[1], self.layer_sizes[0])
+        self.biases[0] = np.random.randn(self.X.shape[1])
 
-        for l in range(1, self.num_layers):
+        for l in range(1, self.num_layers + 1):
             self.weights[l] = np.random.randn(
                 self.layer_sizes[l - 1], self.layer_sizes[l])
             self.biases = np.random.randn(self.layer_sizes[l])
@@ -35,16 +35,18 @@ class NeuralNetwork:
 
     def FeedForward(self):
 
+        activation = self.X
         self.act = [self.X]
         self.zList = []
         self.targets = []
 
         for b, w in zip(self.biases, self.weights):
-            z = np.matmul(self.X, w)
-            print(z.shape)
-            a = self._sigmoid(z)
+            print("act", activation.shape)
+            print("w", w.shape)
+            z = np.matmul(activation, w) + b
+            activation = self._sigmoid(z)
             self.zList.append(z)
-            self.act.append(a)
+            self.act.append(activation)
 
     def FeedForwardOut(self):
         pass
@@ -55,11 +57,10 @@ class NeuralNetwork:
         self.FeedForward()
 
         # Output layer
-        delta_out = (self.act[-1] - self.y) * \
-            self.act[-1] * (1 - self.act[-1])
+        delta_out = (self.act[-1] - self.y)
 
         grad_b_out = np.sum(delta_out, axis=0)
-        grad_w_out = np.matmul(self.act[-l].T, delta_out)
+        grad_w_out = np.matmul(self.act[-1].T, delta_out)
 
         for l in range(2, self.num_layers):
             z = zList[-l]
