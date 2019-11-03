@@ -32,7 +32,10 @@ class NeuralNetwork:
         return exps / np.sum(exps)
 
     def activation_function(self):
-        pass
+        if self.activation == "sigmoid":
+            return 1 / (1 + np.exp(-z))
+
+        if self.activation ==
 
     def FeedForward(self):
 
@@ -42,9 +45,8 @@ class NeuralNetwork:
         self.targets = []
 
         for b, w in zip(self.biases, self.weights):
-            # print("act", activation.shape)
-            # print("w", w.shape)
             z = np.matmul(activation, w) + b
+            print('test')
             activation = self._sigmoid(z)
             self.zList.append(z)
             self.act.append(activation)
@@ -80,6 +82,10 @@ class NeuralNetwork:
             grad_b_hidden[-l] = np.sum(delta_hidden, axis=0)
             grad_w_hidden[-l] = np.matmul(delta_hidden, self.act[-l - 1].T)
 
+        for l in range(self.num_layers):
+            self.weights[l] -= self.eta * grad_w_hidden[l]
+            self.biases[l] -= self.eta * grad_b_hidden[l]
+
     def getMiniBatches(self, data_indices, batch_size):
 
         random_indcs = np.random.choice(
@@ -88,6 +94,7 @@ class NeuralNetwork:
         return random_indcs
 
     def MBSDG(self, n_iters=100, eta=1e-4, epochs=10, batch_size=10):
+        self.eta = eta
 
         data_indices = np.arange(len(self.y_data))
 

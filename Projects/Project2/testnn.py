@@ -25,6 +25,6 @@ NN = NeuralNetwork([9, 5, 10], XTrain, yTrain)
 # print(NN.layer_sizes)
 
 
-NN.MBSDG()
+NN.MBSDG(300)
 
 NN.predict(XTest)
