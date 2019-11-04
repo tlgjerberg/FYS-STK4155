@@ -2,9 +2,10 @@ import numpy as np
 
 
 class NeuralNetwork:
-    def __init__(self, layer_sizes, X, y, seed=0):
+    def __init__(self, layer_sizes, act_funcs, X, y, seed=0):
         self.layer_sizes = layer_sizes
         self.num_layers = len(layer_sizes) - 1
+        self.act_funcs = act_funcs
         self.X_data = X
         self.y_data = y
         self.act = np.empty(self.num_layers + 2, dtype=np.ndarray)
@@ -31,12 +32,19 @@ class NeuralNetwork:
         exps = np.exp(z)
         return exps / np.sum(exps)
 
-    def activation_function(self):
-        if self.activation == "sigmoid":
+    def activation_function(self, z, activation="sigmoid"):
+        if activation == "sigmoid":
             return 1 / (1 + np.exp(-z))
 
-        if self.activation == "tanh":
+        if activation == "tanh":
             return np.tanh(z)
+
+    def activation_grad(self, a, activation="sigmoid"):
+        if activation == "sigmoid":
+            return a * (1 - a)
+
+        if activation == "tanh":
+            return 1 - a**2
 
     def FeedForward(self):
 
@@ -47,17 +55,9 @@ class NeuralNetwork:
 
         for b, w in zip(self.biases, self.weights):
             z = np.matmul(activation, w) + b
-            # print('test')
             activation = self._sigmoid(z)
             self.zList.append(z)
             self.act.append(activation)
-
-    # def FeedForwardOut(self, X):
-    #     activation = X
-    #
-    #     for b, w in zip(self.biases, self.weights):
-    #         z = np.matmul(activation, w) + b
-    #         activation = self._sigmoid(z)
 
     def BackPropagation(self):
 
@@ -83,6 +83,10 @@ class NeuralNetwork:
             grad_b_hidden[-l] = np.sum(delta_hidden, axis=0)
             grad_w_hidden[-l] = np.matmul(delta_hidden, self.act[-l - 1].T)
 
+            # if self.lmda > 0.0:
+            #     grad_w_out += self.lmda *
+
+        # Gradient descent
         for l in range(self.num_layers):
             self.weights[l] -= self.eta * grad_w_hidden[l]
             self.biases[l] -= self.eta * grad_b_hidden[l]
@@ -94,8 +98,9 @@ class NeuralNetwork:
 
         return random_indcs
 
-    def MBSDG(self, n_iters=100, eta=1e-4, epochs=10, batch_size=10):
+    def MBGD(self, n_iters=100, eta=1e-4, lmda=0.01, epochs=10, batch_size=10):
         self.eta = eta
+        self.lmda = lmda
 
         data_indices = np.arange(len(self.y_data))
 

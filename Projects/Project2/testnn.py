@@ -28,11 +28,11 @@ XTest /= XTestmax
 
 onehotencoder = OneHotEncoder(categories="auto", sparse=False)
 
-ytrain_onehot = onehotencoder.fit_transform(yTrain)
+yTrain_onehot = onehotencoder.fit_transform(yTrain)
 yTest_onehot = onehotencoder.transform(yTest)
 
 
-NN = NeuralNetwork([9, 5, 10], XTrain, yTrain)
+NN = NeuralNetwork([9, 5, 10], ["sigmoid", "sigmoid"], XTrain, yTrain_onehot)
 
 # print(NN.num_layers)
 # print("biases", NN.biases)
@@ -40,11 +40,12 @@ NN = NeuralNetwork([9, 5, 10], XTrain, yTrain)
 # print(NN.layer_sizes)
 
 
-NN.MBSDG(300)
+NN.MBGD(300)
 
 Y_pred = NN.predict(XTest)
 print(Y_pred)
+print(yTest_onehot)
 
-acc = NN.accuracy_score(yTest, Y_pred)
+acc = NN.accuracy_score(yTest_onehot, Y_pred)
 
 print(acc)
