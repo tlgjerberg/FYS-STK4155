@@ -14,6 +14,7 @@ class NeuralNetwork:
 
         np.random.seed(seed)
         self._architecture()
+        print(self.weights.shape)
 
     def _architecture(self):
         self.weights[0] = np.random.randn(
@@ -65,23 +66,23 @@ class NeuralNetwork:
         self.FeedForward()
 
         # Output layer
-        delta_out = (self.act[-1] - self.y)
+        delta = (self.act[-1] - self.y)
 
-        grad_b_out = np.sum(delta_out, axis=0)
-        grad_w_out = np.matmul(self.act[-1].T, delta_out)
+        grad_b_out = np.sum(delta, axis=0)
+        grad_w_out = np.matmul(self.act[-1].T, delta)
 
         # Hidden layers
         grad_w_hidden = np.empty(self.num_layers)
         grad_b_hidden = np.empty(self.num_layers)
 
         for l in range(2, self.num_layers):
-            z = zList[-l]
-            delta_hidden = (np.matmul(
-                self.weights[-l + 1].T, delta_out)
+            z = self.zList[-l]
+            delta = (np.matmul(
+                self.weights[-l + 1], delta)
                 * self.act[-l] * (1 - self.act[-l]))
 
-            grad_b_hidden[-l] = np.sum(delta_hidden, axis=0)
-            grad_w_hidden[-l] = np.matmul(delta_hidden, self.act[-l - 1].T)
+            grad_b_hidden[-l] = np.sum(delta, axis=0)
+            grad_w_hidden[-l] = np.matmul(delta, self.act[-l - 1].T)
 
             # if self.lmda > 0.0:
             #     grad_w_out += self.lmda *
@@ -103,8 +104,6 @@ class NeuralNetwork:
         self.lmda = lmda
 
         data_indices = np.arange(len(self.y_data))
-
-        print(self.X_data.shape)
 
         for i in range(epochs):
             for j in range(n_iters):
