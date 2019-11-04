@@ -14,7 +14,7 @@ class NeuralNetwork:
 
         np.random.seed(seed)
         self._architecture()
-        print(self.weights.shape)
+        # print(self.weights.shape)
 
     def _architecture(self):
         self.weights[0] = np.random.randn(
@@ -54,43 +54,53 @@ class NeuralNetwork:
         self.zList = []
         self.targets = []
 
-        for b, w in zip(self.biases, self.weights):
-            z = np.matmul(activation, w) + b
+        for l in range(self.num_layers + 1):
+            z = np.matmul(activation, self.weights[l]) + self.biases[l]
             activation = self._sigmoid(z)
             self.zList.append(z)
             self.act.append(activation)
+
+        # for b, w in zip(self.biases, self.weights):
+        #     z = np.matmul(activation, w) + b
+        #     activation = self._sigmoid(z)
+        #     self.zList.append(z)
+        #     self.act.append(activation)
 
     def BackPropagation(self):
 
         # feedforward
         self.FeedForward()
 
+        grad_w = np.empty(self.num_layers, dtype=np.ndarray)
+        grad_b = np.empty(self.num_layers, dtype=np.ndarray)
+
         # Output layer
-        delta = (self.act[-1] - self.y)
+        delta = (self.act[-1] - self.y) * (self.act[-1] * (1 - self.act[-1]))
 
-        grad_b_out = np.sum(delta, axis=0)
-        grad_w_out = np.matmul(self.act[-1].T, delta)
-
+        grad_b[-1] = np.sum(delta, axis=0)
+        grad_w[-1] = np.matmul(self.act[-1].T, delta)
         # Hidden layers
-        grad_w_hidden = np.empty(self.num_layers)
-        grad_b_hidden = np.empty(self.num_layers)
+        grad_w_hidden = np.empty(self.num_layers, dtype=np.ndarray)
+        grad_b_hidden = np.empty(self.num_layers, dtype=np.ndarray)
 
-        for l in range(2, self.num_layers):
+        for l in range(2, self.num_layers + 1):
             z = self.zList[-l]
-            delta = (np.matmul(
-                self.weights[-l + 1], delta)
-                * self.act[-l] * (1 - self.act[-l]))
+            delta = (np.matmul(delta, self.weights[-l + 1].T)
+                     * self.act[-l] * (1 - self.act[-l]))
 
-            grad_b_hidden[-l] = np.sum(delta, axis=0)
-            grad_w_hidden[-l] = np.matmul(delta, self.act[-l - 1].T)
-
+            grad_b[-l] = np.sum(delta, axis=0)
+            grad_w[-l] = np.matmul(self.act[-l - 1].T, delta)
+            # print(grad_w_hidden[-l])
             # if self.lmda > 0.0:
             #     grad_w_out += self.lmda *
 
+        print(grad_w)
+
         # Gradient descent
         for l in range(self.num_layers):
-            self.weights[l] -= self.eta * grad_w_hidden[l]
-            self.biases[l] -= self.eta * grad_b_hidden[l]
+            print(self.weights[l].shape, grad_w[l].shape)
+            self.weights[l] -= self.eta * grad_w[l]
+            self.biases[l] -= self.eta * grad_b[l]
 
     def getMiniBatches(self, data_indices, batch_size):
 

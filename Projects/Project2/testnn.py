@@ -37,8 +37,8 @@ NN = NeuralNetwork([9, 5, 8, 10], ["sigmoid", "sigmoid", "sigmoid", "softmax"],
 
 # print(NN.num_layers)
 # print("biases", NN.biases)
-print("weights", NN.weights[0].shape, NN.weights[1].shape,
-      NN.weights[2].shape, NN.weights[3].shape)
+# print("weights", NN.weights[0].shape, NN.weights[1].shape,
+#       NN.weights[2].shape, NN.weights[3].shape)
 # print(NN.layer_sizes)
 
 
