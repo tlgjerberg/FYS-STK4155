@@ -35,7 +35,8 @@ class NeuralNetwork:
         if self.activation == "sigmoid":
             return 1 / (1 + np.exp(-z))
 
-        if self.activation ==
+        if self.activation == "tanh":
+            return np.tanh(z)
 
     def FeedForward(self):
 
@@ -46,17 +47,17 @@ class NeuralNetwork:
 
         for b, w in zip(self.biases, self.weights):
             z = np.matmul(activation, w) + b
-            print('test')
+            # print('test')
             activation = self._sigmoid(z)
             self.zList.append(z)
             self.act.append(activation)
 
-    def FeedForwardOut(self, X):
-        activation = X
-
-        for b, w in zip(self.biases, self.weights):
-            z = np.matmul(activation, w) + b
-            activation = self._sigmoid(z)
+    # def FeedForwardOut(self, X):
+    #     activation = X
+    #
+    #     for b, w in zip(self.biases, self.weights):
+    #         z = np.matmul(activation, w) + b
+    #         activation = self._sigmoid(z)
 
     def BackPropagation(self):
 
@@ -110,4 +111,9 @@ class NeuralNetwork:
                 self.BackPropagation()
 
     def predict(self, X):
-        Y_pred = self.FeedForwardOut(X)
+        self.X = X
+        self.FeedForward()
+        return self.act[-1]
+
+    def accuracy_score(self, Y_test, Y_pred):
+        return np.sum(Y_test == Y_pred) / len(Y_test)
