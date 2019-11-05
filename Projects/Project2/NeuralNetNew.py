@@ -19,12 +19,12 @@ class NeuralNetwork:
     def _architecture(self):
         self.weights[0] = np.random.randn(
             self.X_data.shape[1], self.layer_sizes[0])
-        self.biases[0] = np.random.randn(self.X_data.shape[1])
+        self.biases[0] = np.random.randn(self.layer_sizes[0])
 
         for l in range(1, self.num_layers + 1):
             self.weights[l] = np.random.randn(
                 self.layer_sizes[l - 1], self.layer_sizes[l])
-            self.biases = np.random.randn(self.layer_sizes[l])
+            self.biases[l] = np.random.randn(self.layer_sizes[l])
 
     def _sigmoid(self, z):
         return 1 / (1 + np.exp(-z))
@@ -71,18 +71,20 @@ class NeuralNetwork:
         # feedforward
         self.FeedForward()
 
+        # Gradient arrays
         grad_w = np.empty(self.num_layers, dtype=np.ndarray)
         grad_b = np.empty(self.num_layers, dtype=np.ndarray)
 
+        # print('act[-1]', self.act[-1].shape)
         # Output layer
         delta = (self.act[-1] - self.y) * (self.act[-1] * (1 - self.act[-1]))
 
         grad_b[-1] = np.sum(delta, axis=0)
-        grad_w[-1] = np.matmul(self.act[-1].T, delta)
-        # Hidden layers
-        grad_w_hidden = np.empty(self.num_layers, dtype=np.ndarray)
-        grad_b_hidden = np.empty(self.num_layers, dtype=np.ndarray)
+        grad_w[-1] = np.matmul(self.act[-2].T, delta)
 
+        # print(grad_w[-1].shape)
+
+        # Hidden layers
         for l in range(2, self.num_layers + 1):
             z = self.zList[-l]
             delta = (np.matmul(delta, self.weights[-l + 1].T)
@@ -90,17 +92,19 @@ class NeuralNetwork:
 
             grad_b[-l] = np.sum(delta, axis=0)
             grad_w[-l] = np.matmul(self.act[-l - 1].T, delta)
-            # print(grad_w_hidden[-l])
             # if self.lmda > 0.0:
             #     grad_w_out += self.lmda *
 
-        print(grad_w)
+            # print('current', self.weights[-l].shape, grad_w[-l].shape)
+            # print('prev', self.weights[-l - 1].shape)
+            # print(self.biases[-l], grad_b[-l])
 
         # Gradient descent
         for l in range(self.num_layers):
-            print(self.weights[l].shape, grad_w[l].shape)
-            self.weights[l] -= self.eta * grad_w[l]
-            self.biases[l] -= self.eta * grad_b[l]
+            # print(self.weights[l].shape, grad_w[l].shape, self.eta)
+            # print(self.biases[l + 1].shape, grad_b[l].shape, self.eta)
+            self.weights[l + 1] -= self.eta * grad_w[l]
+            self.biases[l + 1] -= self.eta * grad_b[l]
 
     def getMiniBatches(self, data_indices, batch_size):
 
@@ -109,7 +113,7 @@ class NeuralNetwork:
 
         return random_indcs
 
-    def MBGD(self, n_iters=100, eta=1e-4, lmda=0.01, epochs=10, batch_size=10):
+    def MBGD(self, n_iters=100, eta=1e-4, lmda=0.01, epochs=10, batch_size=100):
         self.eta = eta
         self.lmda = lmda
 

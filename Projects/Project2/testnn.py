@@ -36,7 +36,8 @@ NN = NeuralNetwork([9, 5, 8, 10], ["sigmoid", "sigmoid", "sigmoid", "softmax"],
                    XTrain, yTrain_onehot)
 
 # print(NN.num_layers)
-# print("biases", NN.biases)
+# print("biases", NN.biases[0].shape,
+#       NN.biases[1].shape, NN.biases[2].shape, NN.biases[3].shape)
 # print("weights", NN.weights[0].shape, NN.weights[1].shape,
 #       NN.weights[2].shape, NN.weights[3].shape)
 # print(NN.layer_sizes)
@@ -45,9 +46,9 @@ NN = NeuralNetwork([9, 5, 8, 10], ["sigmoid", "sigmoid", "sigmoid", "softmax"],
 NN.MBGD(300)
 
 Y_pred = NN.predict(XTest)
-# print(Y_pred)
-# print(yTest_onehot)
+print(Y_pred)
+print(yTest_onehot)
 
 acc = NN.accuracy_score(yTest_onehot, Y_pred)
 
-# print(acc)
+print(acc)
