@@ -40,6 +40,10 @@ class NeuralNetwork:
         if activation == "tanh":
             return np.tanh(z)
 
+        if activation == "softmax":
+            exps = np.exp(z)
+            return exps / np.sum(exps)
+
     def activation_grad(self, a, activation="sigmoid"):
         if activation == "sigmoid":
             return a * (1 - a)
@@ -53,10 +57,10 @@ class NeuralNetwork:
         self.act = [self.X]
         self.zList = []
         self.targets = []
-
         for l in range(self.num_layers + 1):
             z = np.matmul(activation, self.weights[l]) + self.biases[l]
-            activation = self._sigmoid(z)
+            activation = self.activation_function(z, self.act_funcs[l])
+            print('act', activation.shape)
             self.zList.append(z)
             self.act.append(activation)
 

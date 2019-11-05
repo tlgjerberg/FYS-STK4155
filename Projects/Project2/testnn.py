@@ -40,7 +40,7 @@ NN = NeuralNetwork([9, 5, 8, 10], ["sigmoid", "sigmoid", "sigmoid", "softmax"],
 #       NN.biases[1].shape, NN.biases[2].shape, NN.biases[3].shape)
 # print("weights", NN.weights[0].shape, NN.weights[1].shape,
 #       NN.weights[2].shape, NN.weights[3].shape)
-# print(NN.layer_sizes)
+print(NN.num_layers)
 
 
 NN.MBGD(300)
