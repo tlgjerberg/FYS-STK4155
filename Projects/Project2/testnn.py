@@ -32,15 +32,18 @@ yTrain_onehot = onehotencoder.fit_transform(yTrain)
 yTest_onehot = onehotencoder.transform(yTest)
 
 
-NN = NeuralNetwork([9, 5, 8, 10], ["sigmoid", "sigmoid", "sigmoid", "softmax"],
-                   XTrain, yTrain_onehot)
+NN = NeuralNetwork(
+    [9, 5, 8, 10],
+    ["sigmoid", "sigmoid", "sigmoid", "softmax"],
+    XTrain,
+    yTrain_onehot)
 
 # print(NN.num_layers)
 # print("biases", NN.biases[0].shape,
 #       NN.biases[1].shape, NN.biases[2].shape, NN.biases[3].shape)
 # print("weights", NN.weights[0].shape, NN.weights[1].shape,
 #       NN.weights[2].shape, NN.weights[3].shape)
-print(NN.num_layers)
+# print(NN.num_layers)
 
 
 NN.MBGD(300)

@@ -51,6 +51,9 @@ class NeuralNetwork:
         if activation == "tanh":
             return 1 - a**2
 
+        if activation == "softmax":
+            return 1
+
     def FeedForward(self):
 
         activation = self.X
@@ -60,7 +63,6 @@ class NeuralNetwork:
         for l in range(self.num_layers + 1):
             z = np.matmul(activation, self.weights[l]) + self.biases[l]
             activation = self.activation_function(z, self.act_funcs[l])
-            print('act', activation.shape)
             self.zList.append(z)
             self.act.append(activation)
 
@@ -81,7 +83,7 @@ class NeuralNetwork:
 
         # print('act[-1]', self.act[-1].shape)
         # Output layer
-        delta = (self.act[-1] - self.y) * (self.act[-1] * (1 - self.act[-1]))
+        delta = (self.act[-1] - self.y) * self.activation_grad(self.act[-1])
 
         grad_b[-1] = np.sum(delta, axis=0)
         grad_w[-1] = np.matmul(self.act[-2].T, delta)
@@ -92,12 +94,10 @@ class NeuralNetwork:
         for l in range(2, self.num_layers + 1):
             z = self.zList[-l]
             delta = (np.matmul(delta, self.weights[-l + 1].T)
-                     * self.act[-l] * (1 - self.act[-l]))
+                     * self.activation_grad(self.act[-l]))
 
             grad_b[-l] = np.sum(delta, axis=0)
             grad_w[-l] = np.matmul(self.act[-l - 1].T, delta)
-            # if self.lmda > 0.0:
-            #     grad_w_out += self.lmda *
 
             # print('current', self.weights[-l].shape, grad_w[-l].shape)
             # print('prev', self.weights[-l - 1].shape)
@@ -105,6 +105,9 @@ class NeuralNetwork:
 
         # Gradient descent
         for l in range(self.num_layers):
+            if self.lmda > 0.0:
+                self.weights[l + 1] += self.lmda * grad_w[l]
+                self.biases[l + 1] += self.lmda * grad_b[l]
             # print(self.weights[l].shape, grad_w[l].shape, self.eta)
             # print(self.biases[l + 1].shape, grad_b[l].shape, self.eta)
             self.weights[l + 1] -= self.eta * grad_w[l]
@@ -117,7 +120,7 @@ class NeuralNetwork:
 
         return random_indcs
 
-    def MBGD(self, n_iters=100, eta=1e-4, lmda=0.01, epochs=10, batch_size=100):
+    def MBGD(self, n_iters=100, eta=1e-4, lmda=0.01, epochs=70, batch_size=100):
         self.eta = eta
         self.lmda = lmda
 
@@ -135,7 +138,12 @@ class NeuralNetwork:
     def predict(self, X):
         self.X = X
         self.FeedForward()
-        return self.act[-1]
+        print(self.act[-1])
+        y = np.zeros_like(self.act[-1])
+        y[np.arange(len(self.act[-1])), self.act[-1].argmax(1)] = 1
+        return y
 
     def accuracy_score(self, Y_test, Y_pred):
+        print(len(Y_test))
+        print(np.sum(Y_test == Y_pred))
         return np.sum(Y_test == Y_pred) / len(Y_test)
