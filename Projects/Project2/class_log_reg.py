@@ -58,7 +58,7 @@ class LogisticRegression:
             X = self._add_intercept(X)
 
         # Initialize weights
-        self.theta = theta = np.random.randn(X.shape[1], 1)
+        self.theta = np.random.randn(X.shape[1], 1)
 
         for i range(self.num_iter):
             Xb = np.dot(X, self.theta)

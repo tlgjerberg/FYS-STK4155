@@ -4,6 +4,7 @@ import numpy as np
 import random
 import seaborn as sns
 from NeuralNet import *
+import matplotlib.pyplot as plt
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
@@ -19,6 +20,7 @@ filename = cwd + '/default of credit card clients.xls'
 nanDict = {}
 df = pd.read_excel(filename, header=1, skiprows=0,
                    index_col=0, na_values=nanDict)
+
 
 df.rename(index=str,
           columns={"default payment next month": "defaultPaymentNextMonth"},
@@ -38,6 +40,24 @@ df = df.drop(df[(df.BILL_AMT1 == 0) &
                 (df.PAY_AMT4 == 0) &
                 (df.PAY_AMT5 == 0) &
                 (df.PAY_AMT6 == 0)].index)
+
+corr = df.corr()
+# corr.style.background_gradient(cmap='coolwarm').set_precision(2)
+
+
+# f = plt.figure(figsize=(19, 15))
+# plt.matshow(corr, fignum=f.number, cmap='coolwarm')
+# plt.xticks(range(df.shape[1]), df.columns, fontsize=14, rotation=90)
+# plt.yticks(range(df.shape[1]), df.columns, fontsize=14)
+# cb = plt.colorbar()
+# cb.ax.tick_params(labelsize=14)
+# plt.title('Correlation Matrix', fontsize=16)
+# plt.show()
+sns.heatmap(corr,
+            xticklabels=corr.columns.values,
+            yticklabels=corr.columns.values, annot=True, cmap='viridis')
+plt.ylim(24, 0)
+plt.show()
 
 #Features and targets
 X = df.loc[:, df.columns != 'defaultPaymentNextMonth'].values
@@ -74,10 +94,3 @@ XTest = sc.transform(XTest)
 # One-hot's of the target vector
 Y_train_onehot = onehotencoder.fit_transform(yTrain)
 Y_test_onehot = onehotencoder.transform(yTest)
-
-
-NN = NeuralNetwork([2, 10, 5])
-
-NN.SGD(XTrain, Y_train_onehot, 10, 4)
-
-NN.evaluate(XTest, Y_test_onehot)

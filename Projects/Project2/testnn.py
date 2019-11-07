@@ -2,6 +2,8 @@ from NeuralNetNew import *
 from sklearn.datasets import load_breast_cancer, load_digits
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 # X, y = load_breast_cancer(return_X_y=True)
 data = load_digits()
@@ -33,25 +35,51 @@ yTest_onehot = onehotencoder.transform(yTest)
 
 
 NN = NeuralNetwork(
-    [9, 5, 8, 10],
-    ["sigmoid", "sigmoid", "sigmoid", "softmax"],
+    [100, 50, 10],
+    ["sigmoid", "sigmoid", "softmax"],
     XTrain,
     yTrain_onehot)
 
-# print(NN.num_layers)
-# print("biases", NN.biases[0].shape,
-#       NN.biases[1].shape, NN.biases[2].shape, NN.biases[3].shape)
-# print("weights", NN.weights[0].shape, NN.weights[1].shape,
-#       NN.weights[2].shape, NN.weights[3].shape)
-# print(NN.num_layers)
+eta_vals = np.logspace(-5, 1, 7)
+lmda_vals = np.logspace(-5, 1, 7)
+
+# grid search
+for eta in eta_vals:
+    for lmda in lmda_vals:
+        NN.train(100, eta=eta, lmda=lmda)
+
+        test_predict = NN.predict(XTest)
+
+        print("Learning rate  = ", eta)
+        print("Lambda = ", lmda)
+        print("Accuracy score on test set: ",
+              accuracy_score(yTest_onehot, test_predict))
+
+sns.set()
+
+train_accuracy = np.zeros((len(eta_vals), len(lmda_vals)))
+test_accuracy = np.zeros((len(eta_vals), len(lmda_vals)))
+
+for i in range(len(eta_vals)):
+    for j in range(len(lmda_vals)):
+
+        train_pred = NN.predict(XTrain)
+        test_pred = NN.predict(XTest)
+
+        train_accuracy[i][j] = accuracy_score(yTrain_onehot, train_pred)
+        test_accuracy[i][j] = accuracy_score(yTest_onehot, test_pred)
 
 
-NN.MBGD(300)
+fig, ax = plt.subplots(figsize=(10, 10))
+sns.heatmap(train_accuracy, annot=True, ax=ax, cmap="viridis")
+ax.set_title("Training Accuracy")
+ax.set_ylabel("$\eta$")
+ax.set_xlabel("$\lambda$")
+plt.show()
 
-Y_pred = NN.predict(XTest)
-print(Y_pred)
-print(yTest_onehot)
-
-acc = NN.accuracy_score(yTest_onehot, Y_pred)
-
-print(acc)
+fig, ax = plt.subplots(figsize=(10, 10))
+sns.heatmap(test_accuracy, annot=True, ax=ax, cmap="viridis")
+ax.set_title("Test Accuracy")
+ax.set_ylabel("$\eta$")
+ax.set_xlabel("$\lambda$")
+plt.show()
