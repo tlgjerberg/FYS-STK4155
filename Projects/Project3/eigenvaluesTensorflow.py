@@ -6,7 +6,8 @@ from mpl_toolkits.mplot3d import Axes3D
 Q = np.random.rand(3, 3)
 
 A = tf.constant(((Q.T + Q) / 2))
-A_debug = [[3, 2, 4], [2, 0, 2], [4, 2, 3]]
+A_debug = np.array([[3, 2, 4], [2, 0, 2], [4, 2, 3]], dtype=np.float64)
+A = A_debug
 # lmda_debug = [1, 8, 1]
 # eigvec_debug = [[-0.74, 0.667, -0.21], [0.29, 0.333, -0.77], [0.59, 0.]]
 
@@ -15,8 +16,6 @@ A_debug = [[3, 2, 4], [2, 0, 2], [4, 2, 3]]
 # x = np.zeros((A.shape[0], T))
 # x[0][0] = 1
 
-
-# print(x[:, 0])
 
 tf.keras.backend.set_floatx("float64")
 
@@ -39,15 +38,19 @@ class DNModel(tf.keras.Model):
 
 
 @tf.function
-def g_analytic(x, t):
-    return None
+def g_analytic(A, x, t):
+    return np.linalg.eig(A)
 
 
 @tf.function
 def RHS(model, A, x, t):
     TS = trial_solution(model, x, t)
-    return (tf.linalg.matmul(tf.linalg.matmul(TS.T, TS), tf.linalg.matmul(A, TS))
-            - tf.linalg.matmul(tf.linalg.matmul(tf.linalg.matmul(TS.T, A), TS), TS))
+    TST = tf.transpose(TS)
+    print(x.shape)
+    print(TS.shape)
+    print(TST.shape)
+    return (tf.linalg.matmul(tf.linalg.matmul(TST, TS) * A, TS)
+            - tf.linalg.matmul(tf.linalg.matmul(TST, A), TS) * TS)
 
 
 @tf.function
@@ -58,7 +61,7 @@ def I(x):
 
 @tf.function
 def trial_solution(model, x, t):
-    return (1 - t) * x + t * model(x)
+    return (1 - t) * x + t * model(t)
 
 
 # Define loss function
@@ -85,6 +88,14 @@ def grad(model, x, t):
     return loss_value, tape.gradient(loss_value, model.trainable_variables)
 
 
+@tf.function
+def eig_vals(A, v):
+
+    vT = tf.transpose(v)
+
+    return tf.linalg.matmul(tf.linalg.matmul(vT, A))
+
+
 # Initial model and optimizer
 model = DNModel()
 optimizer = tf.keras.optimizers.Adam(0.01)
@@ -101,24 +112,30 @@ T = tf.linspace(start, stop, num_points)
 
 x = [1, 0, 0]
 x = tf.constant(x, dtype=tf.float64)
+x = tf.reshape(x, [-1, 1])
+
 
 for t in T:
-
+    t = tf.reshape(t, [-1, 1])
     for epoch in range(num_epochs):
         # Apply gradients in optimizer
         cost, gradients = grad(model, x, t)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
         # Output loss improvement
-        print(
-            f"Step: {optimizer.iterations.numpy()}, "
-            + f"Loss: {tf.math.reduce_mean(cost.numpy())}"
-        )
+        # print(
+        #     f"Step: {optimizer.iterations.numpy()}, "
+        #     + f"Loss: {tf.math.reduce_mean(cost.numpy())}"
+        # )
 
+    print(trial_solution(model, x, t))
 
-g = tf.reshape(g_analytic(x, t), (num_points, num_points))
-g_nn = tf.reshape(trial_solution(model, x, t), (num_points, num_points))
+A = A_debug
+# print(g_analytic(A, x, t)[0])
 
-diff = tf.abs(g - g_nn)
-print(f"Max diff: {tf.reduce_max(diff)}")
-print(f"Mean diff: {tf.reduce_mean(diff)}")
+# g = tf.reshape(g_analytic(x, t), (num_points, num_points))
+# g_nn = trial_solution(model, x, t)
+
+# diff = tf.abs(g - g_nn)
+# print(f"Max diff: {tf.reduce_max(diff)}")
+# print(f"Mean diff: {tf.reduce_mean(diff)}")
